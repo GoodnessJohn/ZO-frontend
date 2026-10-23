@@ -75,6 +75,11 @@ export interface VaultDetail extends VaultSummary {
   payoffExplanation: string;
   historicalEpochs: EpochRecord[];
   userPosition: UserVaultPosition | null;
+  // ── Issue #241: Redemption liquidity management ───────────────────────────
+  /** Current idle cash held by the vault in USD (for buffer display). */
+  cashBufferUsd?: number;
+  /** Total value of currently queued withdrawal requests in USD. */
+  queuedRedemptionUsd?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -110,6 +115,8 @@ const MOCK_VAULTS: VaultDetail[] = [
       { epochNumber: 42, depositStart: "2026-08-22", activeStart: "2026-08-23", settlementDate: "2026-08-30", strike: 0.120, expiryDays: 7, premiumCollected: 0.0016, outcome: "expired_worthless", pnlPct: 0.019 },
     ],
     userPosition: { shares: 950, shareValue: 1.042, totalValue: 989.9, accruedPremium: 18.46, pendingWithdrawal: 0 },
+    cashBufferUsd: 13_632,
+    queuedRedemptionUsd: 8_520,
   },
   {
     id: "btc-csp-v1",
