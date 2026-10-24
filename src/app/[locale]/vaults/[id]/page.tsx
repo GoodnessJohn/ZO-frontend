@@ -29,6 +29,7 @@ import {
   type PolicyReasonCode,
 } from "../../../../lib/api/vaults";
 import { VaultLiquidityPanel } from "../../../../components/VaultLiquidityPanel";
+import { VaultAuditLog } from "../../../../components/VaultAuditLog";
 import { VaultGovernancePanel } from "../../../../components/VaultGovernancePanel";
 
 const PHASE_LABELS: Record<EpochPhase, string> = {
@@ -381,6 +382,9 @@ export default function VaultDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
 
                 <VaultReturnProjection historicalEpochs={vault.historicalEpochs} />
+                <VaultLiquidityPanel vault={vault} />
+                <VaultAuditLog vaultId={vault.id} />
+                <VaultGovernancePanel vault={vault} />
               </div>
 
               {/* Right sidebar: user position + deposit/withdraw */}
@@ -599,6 +603,4 @@ export default function VaultDetailPage({ params }: { params: Promise<{ id: stri
                               color: "var(--text-hi)", fontFamily: "var(--font-mono)", fontSize: 13,
                             }}
                           />
-                          {withdrawShares && !isNaN(parseFloat(withdrawShares)) && parseFloat(withdrawShares) > 0 && (
-                            <div style={{ fontSize: 10, color: "var(--text-lo)", marginTop: 4 }}>
-                              ≈ ${(parseFloat(withdrawShares) * vault.sharePrice).toFixed(2)} USDC at current
+                          {withdrawShares && !isNaN(parseFloat(withdrawShares)) &&

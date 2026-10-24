@@ -358,6 +358,88 @@ export const GOVERNABLE_CONTRACTS: GovernableContract[] = [
           },
         ],
       },
+      // ── Issue #243: audit-logged parameter changes ────────────────────────
+      {
+        name: "set_epoch_advance",
+        label: "Force epoch advance",
+        summary: "Rolls the vault into the next epoch immediately, bypassing the scheduled boundary.",
+        params: [
+          {
+            name: "justification",
+            label: "Justification",
+            type: "string",
+            help: "Required: explain why a forced advance is necessary (e.g. oracle failure, settlement delay).",
+            display: "text",
+            multiline: true,
+            placeholder: "Forced due to …",
+          },
+        ],
+        dangerous: true,
+        dangerNote: "Forcing an epoch advance can strand in-flight deposits and withdrawals. This action is immutably recorded in the vault audit log.",
+      },
+      {
+        name: "set_strategy",
+        label: "Change strategy",
+        summary: "Updates the vault's option-writing strategy (covered_call, cash_secured_put, iron_condor, wheel).",
+        params: [
+          {
+            name: "strategy",
+            label: "New strategy",
+            type: "symbol",
+            placeholder: "covered_call",
+            readMethod: "strategy",
+            display: "symbol",
+          },
+          {
+            name: "justification",
+            label: "Justification",
+            type: "string",
+            help: "Required: document the risk-committee rationale.",
+            display: "text",
+            multiline: true,
+            placeholder: "Changing strategy because …",
+          },
+        ],
+        dangerous: true,
+        dangerNote: "Strategy changes affect depositor risk profile. The change is immutably recorded in the vault audit log.",
+      },
+      {
+        name: "withdraw_treasury",
+        label: "Treasury withdrawal",
+        summary: "Pulls accrued performance fees or treasury funds to the fee recipient address.",
+        params: [
+          {
+            name: "amount",
+            label: "Amount",
+            type: "i128",
+            placeholder: "10000000000",
+            help: "Amount in stroops (1 XLM = 10,000,000 stroops).",
+            display: "xlm",
+            unit: "XLM",
+            decimals: 7,
+          },
+          {
+            name: "recipient",
+            label: "Recipient",
+            type: "address",
+            placeholder: "G…",
+            help: "Stellar address to receive the funds.",
+            display: "address",
+            dangerous: true,
+          },
+          {
+            name: "justification",
+            label: "Justification",
+            type: "string",
+            help: "Required: describe the purpose of this withdrawal.",
+            display: "text",
+            multiline: true,
+            placeholder: "Treasury withdrawal for …",
+          },
+        ],
+        dangerous: true,
+        dangerNote: "Treasury withdrawals move depositor-adjacent funds. This action is immutably recorded in the vault audit log.",
+      },
       // ── Issue #242: share-weighted depositor governance controls ──────────
       {
         name: "set_quorum_bps",
@@ -1003,81 +1085,4 @@ export function describeAction(action: ProposalAction): string {
 /** Why an action is flagged dangerous, or null when it is safe. */
 export function dangerNote(action: ProposalAction): string | null {
   const contract = findContract(action.contractKey);
-  const fn = contract?.functions.find((f) => f.name === action.functionName);
-  if (!fn) return null;
-  if (fn.dangerous) return fn.dangerNote ?? "This action can affect all protocol funds.";
-  const dangerousParam = fn.params.find((p) => p.dangerous);
-  return dangerousParam ? `“${dangerousParam.label}” cannot be changed back safely.` : null;
-}
-
-export function isDangerous(action: ProposalAction): boolean {
-  return dangerNote(action) !== null;
-}
-
-// ---------------------------------------------------------------------------
-// Form generator
-// ---------------------------------------------------------------------------
-
-/** A single rendered form field, produced from an `ActionParamSpec`. */
-export interface FormField {
-  /** DOM id — stable across renders so labels stay associated. */
-  id: string;
-  name: string;
-  label: string;
-  type: ActionParamType;
-  value: string;
-  placeholder: string;
-  help?: string;
-  multiline: boolean;
-  /** Render as a select (enumerations) rather than a text input. */
-  options?: { value: string; label: string }[];
-  /** Controlled-component callback target. */
-  inputMode?: "text" | "numeric";
-}
-
-const BOOL_OPTIONS = [
-  { value: "false", label: "false" },
-  { value: "true", label: "true" },
-];
-
-/**
- * Generate the form model for a governable function.  This is the
- * schema-driven form generator the wizard renders — no per-parameter JSX.
- */
-export function buildFormFields(
-  action: Pick<ProposalAction, "contractKey" | "functionName" | "values">,
-  idPrefix = "action"
-): FormField[] {
-  const fn = findFunction(action.contractKey, action.functionName);
-  if (!fn) return [];
-
-  return fn.params.map((param) => {
-    const field: FormField = {
-      id: `${idPrefix}-${param.name}`,
-      name: param.name,
-      label: param.label,
-      type: param.type,
-      value: action.values[param.name] ?? param.suggested ?? defaultForParam(param),
-      placeholder: param.placeholder ?? "",
-      help: param.help,
-      multiline: param.multiline === true || param.type === "vec<address>",
-    };
-
-    if (param.type === "bool") field.options = BOOL_OPTIONS;
-    if (param.type === "u32" || param.type === "u64" || param.type === "u128" || param.type === "i128") {
-      field.inputMode = "numeric";
-    }
-
-    return field;
-  });
-}
-
-/**
- * Fallback value when a param has neither a stored value nor a suggestion.
- *
- * A bool must resolve to "false" rather than "": a <select> of true/false has
- * no empty option, so an empty value would render as "false" while still
- * encoding as a missing required argument.
- */
-function defaultForParam(param: ActionParamSpec): string {
-  return param.type === "bool
+  const fn = contract?.functions.find((f) => f.name === action
